@@ -13,6 +13,7 @@ Attribute VB_Name = "ICARDA_Toolkit"
 'Option VBASupport 1
 
 ' Encode a location coordinates (latitude and longitude in WGS84) into Open Location Code
+' Ref: https://github.com/google/open-location-code/blob/master/docs/specification.md
 Public Function DD2OLC(latitude As Double, longitude As Double, Optional codeLength As Integer = 10) As Variant
     Dim x, y As Integer, validChars As String
     
@@ -86,8 +87,7 @@ Public Function VOLC(olc As String, Optional codeLength As Integer = 10) As Vari
 End Function
 
 
-' Generate a Code 128 Barcode including checksum
-' Ref: https://github.com/google/open-location-code/blob/master/docs/specification.md
+' Generate the Code 128 Barcode, including the checksum.
 Public Function Barcode(myLabel As String) As Variant
     Dim ch As String, n As Long, sum As Long, checksum As Integer
     sum = 104
