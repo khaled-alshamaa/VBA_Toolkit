@@ -1,13 +1,93 @@
 Attribute VB_Name = "ICARDA_Toolkit"
-' Name:      ICARDA-VBA-Toolkit-v1.xlsm
-' Copyright: 2019, ICARDA
+
+' Name:      ICARDA-VBA-Toolkit-v2.bas
+' Copyright: 2019-2021, ICARDA
 ' Purpose:   Set of VBA utility functions
 ' Author:    Khaled Al-Shamaa <k.el-shamaa@cgiar.org>
-' Version:   1.0
-' Revision:  12 Jan 2019 - initial version
+' Version:   2.0
+' Revision:  25 Jan 2021 - add DD2OLC, OLC2DD, and VOLC functions
+'            12 Jan 2019 - initial version
 ' License:   GPLv3
 
-'Generate a Code 128 Barcode including checksum
+' Enable this flag when running in OpenOffice/Libre Office.
+'Option VBASupport 1
+
+' Encode a location coordinates (latitude and longitude in WGS84) into Open Location Code
+Public Function DD2OLC(latitude As Double, longitude As Double, Optional codeLength As Integer = 10) As Variant
+    Dim x, y As Integer, validChars As String
+    
+    codeLength = codeLength / 2
+    validChars = "23456789CFGHJMPQRVWX"
+    
+    latitude = latitude + 90
+    longitude = longitude + 180
+    
+    latitude = Round(latitude * 20 ^ (codeLength - 2), 0)
+    longitude = Round(longitude * 20 ^ (codeLength - 2), 0)
+    
+    For i = 1 To codeLength
+        x = longitude Mod 20
+        y = latitude Mod 20
+        
+        longitude = Fix(longitude / 20)
+        latitude = Fix(latitude / 20)
+        
+        olc = Mid(validChars, y + 1, 1) & Mid(validChars, x + 1, 1) & olc
+        
+        If i = 1 Then olc = "+" & olc
+    Next i
+    
+    DD2OLC = olc
+End Function
+
+' Decode an Open Location Code into its location coordinates (WGS84)
+' Ref: https://github.com/google/open-location-code/blob/master/docs/specification.md
+Public Function OLC2DD(olc As String, Optional coordinates As Integer = 0, Optional codeLength As Integer = 10) As Variant
+    Dim latitude, longitude As Double, validChars As String
+    
+    If VOLC(olc, codeLength) = True Then
+        codeLength = codeLength / 2
+        validChars = "23456789CFGHJMPQRVWX"
+            
+        olc = UCase(Replace(olc, "+", ""))
+        
+        For i = 1 To codeLength
+            latitude = latitude + (InStr(validChars, Mid(olc, 2 * i - 1, 1)) - 1) * 20 ^ (2 - i)
+            longitude = longitude + (InStr(validChars, Mid(olc, 2 * i, 1)) - 1) * 20 ^ (2 - i)
+        Next i
+        
+        latitude = latitude - 90
+        longitude = longitude - 180
+        
+        OLC2DD = IIf(coordinates = 1, latitude, IIf(coordinates = 2, longitude, latitude & ", " & longitude))
+    Else
+        OLC2DD = "Invalid Code!"
+    End If
+End Function
+
+' Determine if an Open Location Code is valid
+Public Function VOLC(olc As String, Optional codeLength As Integer = 10) As Variant
+    Dim regEx As Object
+    Set regEx = CreateObject("vbscript.regexp")
+    
+    regEx.Pattern = "[^2-9CFGHJMPQRVWX]+"
+    
+    If Len(olc) <> codeLength + 1 Then
+        IsValid = False
+    ElseIf Mid(olc, codeLength - 1, 1) <> "+" Then
+        IsValid = False
+    ElseIf regEx.Test(UCase(Replace(olc, "+", ""))) Then
+        IsValid = False
+    Else
+        IsValid = True
+    End If
+    
+    VOLC = IsValid
+End Function
+
+
+' Generate a Code 128 Barcode including checksum
+' Ref: https://github.com/google/open-location-code/blob/master/docs/specification.md
 Public Function Barcode(myLabel As String) As Variant
     Dim ch As String, n As Long, sum As Long, checksum As Integer
     sum = 104
@@ -31,11 +111,11 @@ Public Function Barcode(myLabel As String) As Variant
         checksum = checksum + 105
     End If
     
-    Barcode = "Ì" & myLabel & Chr(checksum) & "Î"
+    Barcode = "ÃŒ" & myLabel & Chr(checksum) & "ÃŽ"
 End Function
 
 ' Convert Degrees Minutes Seconds (DMS) coordinates to Decimal Degrees (DD)
-Public Function DEG2DEC(degStr As String) As Variant
+Public Function DMS2DD(degStr As String) As Variant
     Dim regEx As Object
     Set regEx = CreateObject("vbscript.regexp")
 
@@ -44,12 +124,15 @@ Public Function DEG2DEC(degStr As String) As Variant
     
     'You degree symbol by click on Alt+0176 from the numkey
     regEx.Pattern = "(([0-9\.]+)[^'""0-9\.])?(([0-9\.]+)')?(([0-9\.]+)"")?([WwSs])?"
+
     If regEx.Test(degStr) Then
-        X = regEx.Execute(degStr)(0).SubMatches(1)
-        Y = regEx.Execute(degStr)(0).SubMatches(3)
-        Z = regEx.Execute(degStr)(0).SubMatches(5)
+        Set regMatchs = regEx.Execute(degStr)
         
-        If (Len(regEx.Execute(degStr)(0).SubMatches(6)) = 1) Then
+        x = regMatchs(0).SubMatches(1)
+        y = regMatchs(0).SubMatches(3)
+        Z = regMatchs(0).SubMatches(5)
+        
+        If (Len(regMatchs(0).SubMatches(6)) = 1) Then
             D = -1
         Else
             D = 1
@@ -58,29 +141,29 @@ Public Function DEG2DEC(degStr As String) As Variant
         MsgBox ("Oops!")
     End If
     
-    DEG2DEC = D * (X + (Y / 60) + (Z / 3600))
+    DMS2DD = D * (x + (y / 60) + (Z / 3600))
 End Function
 
 ' Convert Decimal Degrees (DD) coordinates to Degrees Minutes Seconds (DMS)
-Public Function DEC2DEG(decStr As String) As Variant
+Public Function DD2DMS(decStr As String) As Variant
     Degrees = Int(decStr)
     Minutes = Int((decStr - Degrees) * 60)
     Seconds = Round((((decStr - Degrees) * 60) - Minutes) * 60, 4)
     
-    Output = ""
-    If (Degrees > 0) Then Output = Degrees & "°"
+    outStr = ""
+    If (Degrees > 0) Then outStr = Degrees & "Â°"
     
     If (Minutes >= 10) Then
-        Output = Output & Minutes & "'"
+        outStr = outStr & Minutes & "'"
     ElseIf (Minutes > 0) Then
-        Output = Output & "0" & Minutes & "'"
+        outStr = outStr & "0" & Minutes & "'"
     End If
     
     If (Seconds >= 10) Then
-        Output = Output & Seconds & """"
+        outStr = outStr & Seconds & """"
     ElseIf (Seconds > 0) Then
-        Output = Output & "0" & Seconds & """"
+        outStr = outStr & "0" & Seconds & """"
     End If
     
-    DEC2DEG = Output
+    DD2DMS = outStr
 End Function
