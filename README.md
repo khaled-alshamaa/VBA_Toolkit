@@ -17,20 +17,39 @@
 ### DMS2DD
 Convert Degrees Minutes Seconds (DMS) coordinates to Decimal Degrees (DD) format.
 
+`dms2dd(string)`
+
 ### DD2DMS
 Convert Decimal Degrees (DD) coordinates to Degrees Minutes Seconds (DMS) format.
 
+`dd2dms(double)`
+
 ### DD2OLC
-Encode a location coordinates (latitude and longitude in WGS84) into [Open Location Code](https://github.com/google/open-location-code/blob/master/docs/specification.md).
+Encode a location coordinates in decimal degrees (latitude and longitude in [WGS84](https://en.wikipedia.org/wiki/World_Geodetic_System)) into [Open Location Code](https://github.com/google/open-location-code/blob/master/docs/specification.md) string.
+
+`dd2olc(latitude, longitude [, codeLength])`
+
+* `codeLength`: Default value is 10. This provides an area that is 1/8000 x 1/8000 degree in size, roughly 14x14 meters.
 
 ### OLC2DD
-Decode an [Open Location Code](https://github.com/google/open-location-code/blob/master/docs/specification.md) into its location coordinates (WGS84).
+Decode an [Open Location Code] (https://github.com/google/open-location-code/blob/master/docs/specification.md) string into its location coordinates in decimal degrees (latitude and longitude in [WGS84](https://en.wikipedia.org/wiki/World_Geodetic_System)).
+
+`olc2dd(string [, coordinates, codeLength])`
+
+* `coordinates`: Default value is 0 (i.e., both latitude and longitude in decimal degrees as a string with comma separator). Other options includes 1 to return latitude and 2 for longitude (both in decimal degrees).
+* `codeLength`: Default value is 10. This provides an area that is 1/8000 x 1/8000 degree in size, roughly 14x14 meters.
 
 ### VOLC
 Determine if an Open Location Code is valid.
 
+`volc(string [,codeLength])`
+
+* `codeLength`: Default value is 10. This provides an area that is 1/8000 x 1/8000 degree in size, roughly 14x14 meters.
+
 ### Barcode
 Generate the Code 128 Barcode, including the checksum. [Output font is Libre Barcode 128](https://fonts.google.com/specimen/Libre+Barcode+128).
+
+`barcode(string)`
 
 ## List of Examples				
 |Function|Example Call|Example Input|Example Output|
