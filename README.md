@@ -32,7 +32,7 @@ Encode a location coordinates in decimal degrees (latitude and longitude in [WGS
 * `codeLength`: Default value is 10. This provides an area that is 1/8000 x 1/8000 degree in size, roughly 14x14 meters.
 
 ### OLC2DD
-Decode an [Open Location Code] (https://github.com/google/open-location-code/blob/master/docs/specification.md) string into its location coordinates in decimal degrees (latitude and longitude in [WGS84](https://en.wikipedia.org/wiki/World_Geodetic_System)).
+Decode an [Open Location Code](https://github.com/google/open-location-code/blob/master/docs/specification.md) string into its location coordinates in decimal degrees (latitude and longitude in [WGS84](https://en.wikipedia.org/wiki/World_Geodetic_System)).
 
 `olc2dd(string [, coordinates, codeLength])`
 
